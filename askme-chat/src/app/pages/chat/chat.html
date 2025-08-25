@@ -1,0 +1,83 @@
+<div class="flex flex-col h-full bg-gray-50">
+  <!-- Chat Messages Container -->
+  <div #chatContainer class="flex-1 overflow-y-auto p-4 space-y-4">
+    @for(message of messages(); track message.content) {
+    <div
+      class="flex"
+      [ngClass]="{ 'justify-end': message.isUser, 'justify-start': !message.isUser }"
+    >
+      <!-- User Message -->
+      <div
+        *ngIf="message.isUser"
+        class="bg-[var(--mat-sys-primary)] text-white rounded-br-none rounded-xl px-4 py-2 w-fit"
+      >
+        {{ message.content }}
+      </div>
+
+      <!-- Assistant Message -->
+      <div
+        *ngIf="!message.isUser"
+        class="bg-white rounded-bl-none rounded-xl px-4 py-2 w-fit shadow-sm border"
+      >
+        <div class="flex items-center space-x-2">
+          <mat-icon class="text-blue-500 ">smart_toy</mat-icon>
+          <div class="flex-1">
+            <span [innerHTML]="message.content"></span>
+            <span *ngIf="message.isStreaming" class="animate-pulse">|</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Loading indicator -->
+    @if(isTyping()) {
+    <div class="flex justify-start">
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border">
+        <div class="flex items-center space-x-2">
+          <mat-icon class="text-blue-500">smart_toy</mat-icon>
+          <div class="flex space-x-1">
+            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+            <div
+              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              style="animation-delay: 0.1s"
+            ></div>
+            <div
+              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              style="animation-delay: 0.2s"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Input Area -->
+  <div class="border-t bg-white p-4">
+    <mat-form-field class="w-full" appearance="outline">
+      <mat-label>Type your message...</mat-label>
+      <textarea
+        matInput
+        [(ngModel)]="currentMessage"
+        (keydown.enter)="onEnterPress($event)"
+        [disabled]="isTyping()"
+        rows="1"
+        style="resize: none; overflow: hidden"
+        #messageInput
+      >
+      </textarea>
+      <button
+        color="primary"
+        class="mr-2"
+        matSuffix
+        mat-icon-button
+        color="primary"
+        (click)="sendMessage()"
+        [disabled]="!currentMessage().trim() || isTyping()"
+      >
+        <mat-icon>send</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+</div>
