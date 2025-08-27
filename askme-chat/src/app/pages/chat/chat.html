@@ -1,8 +1,9 @@
 <div class="flex flex-col h-full bg-gray-50">
   <!-- Chat Messages Container -->
   <div #chatContainer class="flex-1 overflow-y-auto p-4 space-y-4">
-    @for(message of messages(); track message.content) {
+    @for(message of messages(); track message.id) {
     <div
+      [@msgFade]
       class="flex"
       [ngClass]="{ 'justify-end': message.isUser, 'justify-start': !message.isUser }"
     >
@@ -18,39 +19,32 @@
       <div
         *ngIf="!message.isUser"
         class="bg-white rounded-bl-none rounded-xl px-4 py-2 w-fit shadow-sm border"
+        [ngClass]="{'border-red-300 bg-red-50': message.error}"
       >
         <div class="flex items-center space-x-2">
-          <mat-icon class="text-blue-500 ">smart_toy</mat-icon>
+          <mat-icon 
+            [class]="message.error ? 'text-red-500' : 'text-blue-500'"
+          >
+            {{ message.error ? 'error' : 'smart_toy' }}
+          </mat-icon>
           <div class="flex-1">
-            <span [innerHTML]="message.content"></span>
-            <span *ngIf="message.isStreaming" class="animate-pulse">|</span>
+            <ng-container *ngIf="message.content && message.content.length > 0; else loadingDots">
+              <span [innerHTML]="message.content"></span>
+            </ng-container>
+            <ng-template #loadingDots>
+              <div class="flex space-x-1 py-0.5">
+                <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                <div class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+              </div>
+            </ng-template>
           </div>
         </div>
       </div>
     </div>
     }
 
-    <!-- Loading indicator -->
-    @if(isTyping()) {
-    <div class="flex justify-start">
-      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border">
-        <div class="flex items-center space-x-2">
-          <mat-icon class="text-blue-500">smart_toy</mat-icon>
-          <div class="flex space-x-1">
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-            <div
-              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-              style="animation-delay: 0.1s"
-            ></div>
-            <div
-              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-              style="animation-delay: 0.2s"
-            ></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    }
+    <!-- No separate global loading bubble; dots are shown inside the streaming message -->
   </div>
 
   <!-- Input Area -->
@@ -59,7 +53,8 @@
       <mat-label>Type your message...</mat-label>
       <textarea
         matInput
-        [(ngModel)]="currentMessage"
+        [ngModel]="currentMessage()"
+        (ngModelChange)="currentMessage.set($event)"
         (keydown.enter)="onEnterPress($event)"
         [disabled]="isTyping()"
         rows="1"

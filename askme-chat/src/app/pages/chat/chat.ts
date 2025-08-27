@@ -1,16 +1,12 @@
-import { Component, ViewChild, ElementRef, AfterViewChecked, signal, computed } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewChecked, signal, computed, inject, OnInit } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-
-interface ChatMessage {
-  content: string;
-  isUser: boolean;
-  isStreaming?: boolean;
-}
+import { ChatService, ChatMessage, StreamResponse } from '../../services/chat.service';
 
 @Component({
   selector: 'app-chat',
@@ -23,13 +19,24 @@ interface ChatMessage {
     MatIconModule
   ],
   templateUrl: './chat.html',
-  styleUrl: './chat.scss'
+  styleUrl: './chat.scss',
+  animations: [
+    trigger('msgFade', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(4px)' }),
+        animate('180ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ])
+    ])
+  ]
 })
-export class Chat implements AfterViewChecked {
+export class Chat implements OnInit, AfterViewChecked {
   @ViewChild('chatContainer') private chatContainer!: ElementRef;
+  
+  private chatService = inject(ChatService);
 
   messages = signal<ChatMessage[]>([
     {
+      id: this.generateId(),
       content: 'Hello! I\'m Ask Me, your AI assistant. How can I help you today?',
       isUser: false
     }
@@ -40,8 +47,21 @@ export class Chat implements AfterViewChecked {
   
   canSend = computed(() => this.currentMessage().trim().length > 0 && !this.isTyping());
 
+  ngOnInit() {
+    // Session ID is now handled by the service
+    console.log('Session ID:', this.chatService.getSessionId());
+  }
+
   ngAfterViewChecked() {
     this.scrollToBottom();
+  }
+
+  private generateId(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   sendMessage() {
@@ -51,6 +71,7 @@ export class Chat implements AfterViewChecked {
     this.messages.update(previousMessages => ([
       ...previousMessages,
       {
+        id: this.generateId(),
         content: this.currentMessage(),
         isUser: true
       }
@@ -60,64 +81,81 @@ export class Chat implements AfterViewChecked {
     this.currentMessage.set('');
     this.isTyping.set(true);
 
-    // Simulate API delay and then start streaming response
-    setTimeout(() => {
-      this.simulateStreamingResponse(userMessage);
-    }, 1000);
+    // Start streaming response from API
+    this.streamResponse(userMessage);
   }
 
-  private simulateStreamingResponse(userMessage: string) {
-    this.isTyping.set(false);
-    
-    // Sample responses based on user input
-    const responses = [
-      "That's a great question! Let me break it down for you step by step. First, we need to consider the context of your inquiry.",
-      "I understand what you're asking about. Here's my perspective on this topic, and I'll explain it in detail.",
-      "Excellent point! This is something I can definitely help you with. Let me provide you with a comprehensive answer.",
-      "Thanks for asking! This is an interesting topic that has several important aspects to consider.",
-      "I'd be happy to help you with that! Here's what I think about your question and some additional insights."
-    ];
-
-    const response = responses[Math.floor(Math.random() * responses.length)];
-    
-    // Create streaming message and capture its index in the list
+  private async streamResponse(userMessage: string) {
     let streamingIndex = -1;
-    this.messages.update(previousMessages => {
-      streamingIndex = previousMessages.length;
-      return [
-        ...previousMessages,
-        {
-          content: '',
-          isUser: false,
-          isStreaming: true
-        }
-      ];
-    });
     
-    // Simulate streaming by adding characters over time
-    let currentIndex = 0;
-    const streamInterval = setInterval(() => {
-      if (currentIndex < response.length) {
-        const nextChar = response[currentIndex];
-        currentIndex++;
-        this.messages.update(previousMessages => {
-          const nextMessages = [...previousMessages];
-          const current = { ...nextMessages[streamingIndex] } as ChatMessage;
-          current.content = current.content + nextChar;
-          nextMessages[streamingIndex] = current;
-          return nextMessages;
+    try {
+      // Create streaming message
+      this.messages.update(previousMessages => {
+        streamingIndex = previousMessages.length;
+        return [
+          ...previousMessages,
+          {
+            id: this.generateId(),
+            content: '',
+            isUser: false,
+            isStreaming: true
+          }
+        ];
+      });
+
+      // Progressive updates using observable stream of chunks/aggregate text
+      await new Promise<void>((resolve, reject) => {
+        const sub = this.chatService.streamResponse$(userMessage).subscribe({
+          next: (aggregate: string) => {
+            this.messages.update(previousMessages => {
+              const nextMessages = [...previousMessages];
+              const current = { ...nextMessages[streamingIndex] } as ChatMessage;
+              current.content = aggregate;
+              nextMessages[streamingIndex] = current;
+              return nextMessages;
+            });
+          },
+          error: (err: any) => {
+            sub.unsubscribe();
+            reject(err);
+          },
+          complete: () => {
+            sub.unsubscribe();
+            resolve();
+          }
         });
-      } else {
-        clearInterval(streamInterval);
-        this.messages.update(previousMessages => {
-          const nextMessages = [...previousMessages];
-          const current = { ...nextMessages[streamingIndex] } as ChatMessage;
-          current.isStreaming = false;
-          nextMessages[streamingIndex] = current;
-          return nextMessages;
-        });
-      }
-    }, 25); // Add character every 50ms
+      });
+
+      this.finishStreaming(streamingIndex);
+
+    } catch (error: any) {
+      console.error('Streaming error:', error);
+      this.handleStreamingError(streamingIndex, error);
+    } finally {
+      this.isTyping.set(false);
+    }
+  }
+
+  private finishStreaming(streamingIndex: number) {
+    this.messages.update(previousMessages => {
+      const nextMessages = [...previousMessages];
+      const current = { ...nextMessages[streamingIndex] } as ChatMessage;
+      current.isStreaming = false;
+      nextMessages[streamingIndex] = current;
+      return nextMessages;
+    });
+  }
+
+  private handleStreamingError(streamingIndex: number, error: any) {
+    this.messages.update(previousMessages => {
+      const nextMessages = [...previousMessages];
+      const current = { ...nextMessages[streamingIndex] } as ChatMessage;
+      current.isStreaming = false;
+      current.error = true;
+      current.content = `Sorry, I encountered an error: ${error.message || 'Unknown error'}`;
+      nextMessages[streamingIndex] = current;
+      return nextMessages;
+    });
   }
 
   onEnterPress(pEvent: Event) {
