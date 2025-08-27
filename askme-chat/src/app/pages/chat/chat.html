@@ -29,7 +29,7 @@
           </mat-icon>
           <div class="flex-1">
             <ng-container *ngIf="message.content && message.content.length > 0; else loadingDots">
-              <span [innerHTML]="message.content"></span>
+              <span [innerHTML]="parseMarkdown(message.content)"></span>
             </ng-container>
             <ng-template #loadingDots>
               <div class="flex space-x-1 py-0.5">
