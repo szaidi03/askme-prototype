@@ -44,10 +44,27 @@ export class Chat implements OnInit, AfterViewChecked {
     }
   ]);
   
+  // Track animation version for forcing re-animations
+  animationVersion = signal(0);
+  
   currentMessage = signal('');
   isTyping = signal(false);
   
+  // Preset questions
+  presetQuestions = signal([
+    'Do you have security group configurations for ec2 instances?',
+    'I need to know what systems utilize PII information.',
+    'Where to find team members data in netsparker?',
+    'Where can I locate critical and high vulnerabilities?'
+  ]);
+  
   canSend = computed(() => this.currentMessage().trim().length > 0 && !this.isTyping());
+  
+  // Show preset questions when there are no user messages (only the initial greeting)
+  showPresetQuestions = computed(() => {
+    const userMessages = this.messages().filter(msg => msg.isUser);
+    return userMessages.length === 0;
+  });
 
   ngOnInit() {
     // Session ID is now handled by the service
@@ -169,6 +186,12 @@ export class Chat implements OnInit, AfterViewChecked {
     }
   }
 
+  onPresetQuestionClick(question: string) {
+    // Set the question as the current message and send it
+    this.currentMessage.set(question);
+    this.sendMessage();
+  }
+
   private scrollToBottom(): void {
     try {
       if (this.chatContainer) {
@@ -182,7 +205,7 @@ export class Chat implements OnInit, AfterViewChecked {
     
     let html = text
       // Headers
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mb-2">$1</h3>')
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
       .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
       
@@ -210,23 +233,23 @@ export class Chat implements OnInit, AfterViewChecked {
       .replace(/\n/g, '<br>')
       
       // Wrap lists
-      .replace(/(<li.*<\/li>)/gs, '<ul class="list-disc mb-2">$1</ul>')
-      .replace(/<ul class="list-disc mb-2">(<li.*<\/li>)<\/ul>/gs, '<ul class="list-disc mb-2">$1</ul>')
+      .replace(/(<li.*<\/li>)/gs, '<ul class="list-disc">$1</ul>')
+      .replace(/<ul class="list-disc">(<li.*<\/li>)<\/ul>/gs, '<ul class="list-disc">$1</ul>')
       
       // Clean up multiple line breaks
-      .replace(/<br><br>/g, '</p><p class="mb-2">')
+      .replace(/<br><br>/g, '</p><p>')
       
       // Wrap in paragraphs
-      .replace(/^(.+)$/gm, '<p class="mb-2">$1</p>')
+      .replace(/^(.+)$/gm, '<p>$1</p>')
       
       // Clean up empty paragraphs
-      .replace(/<p class="mb-2"><\/p>/g, '')
-      .replace(/<p class="mb-2"><br><\/p>/g, '')
+      .replace(/<p><\/p>/g, '')
+      .replace(/<p><br><\/p>/g, '')
       
       // Final cleanup
-      .replace(/<p class="mb-2">(<h[1-6].*<\/h[1-6]>)<\/p>/g, '$1')
-      .replace(/<p class="mb-2">(<ul.*<\/ul>)<\/p>/g, '$1')
-      .replace(/<p class="mb-2">(<pre.*<\/pre>)<\/p>/g, '$1');
+      .replace(/<p>(<h[1-6].*<\/h[1-6]>)<\/p>/g, '$1')
+      .replace(/<p>(<ul.*<\/ul>)<\/p>/g, '$1')
+      .replace(/<p>(<pre.*<\/pre>)<\/p>/g, '$1');
 
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }

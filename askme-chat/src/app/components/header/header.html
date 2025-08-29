@@ -1,8 +1,11 @@
 <mat-toolbar class="header-toolbar shadow-md">
-  <mat-icon class="mr-2">chat</mat-icon>
-  <span class="text-xl font-semibold">Ask Me</span>
+  <mat-icon class="ml-1 mr-3">chat</mat-icon>
+  <span class="text-xl font-semibold mr-4">Athena (Ask Me)</span>
+
+  <!-- Database Selector -->
+
   <span class="flex-1"></span>
-  <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="User menu">
+  <!-- <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="User menu">
     <mat-icon>account_circle</mat-icon>
   </button>
   <mat-menu #menu="matMenu">
@@ -14,5 +17,28 @@
       <mat-icon>logout</mat-icon>
       <span>Logout</span>
     </button>
-  </mat-menu>
+  </mat-menu> -->
+  <button
+    [matTooltip]="'Reset Chat'"
+    mat-icon-button
+    color="primary"
+    (click)="resetChat()"
+    class="mr-2"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+  <mat-form-field class="database-selector" appearance="outline">
+    <mat-select
+      [panelWidth]="''"
+      [value]="selectedDatabase()"
+      (selectionChange)="onDatabaseChange($event.value)"
+      [disabled]="isLoading()"
+      placeholder="Select Database"
+    >
+      <mat-option *ngFor="let database of databases()" [value]="database">
+        {{ database }}
+      </mat-option>
+    </mat-select>
+    <mat-icon matSuffix *ngIf="isLoading()">hourglass_empty</mat-icon>
+  </mat-form-field>
 </mat-toolbar>

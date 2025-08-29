@@ -1,0 +1,56 @@
+// Fade-in animation for streaming content
+.streaming-content {
+  // Target all direct children that are block elements
+  > p, > h1, > h2, > h3, > ul, > pre, > div {
+    animation: fadeInUp 0.4s ease-out forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  
+  // Target list items within lists
+  ul > li {
+    animation: fadeInUp 0.3s ease-out forwards;
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Stagger animations for better visual effect
+.streaming-content > *:nth-child(1) { animation-delay: 0ms; }
+.streaming-content > *:nth-child(2) { animation-delay: 80ms; }
+.streaming-content > *:nth-child(3) { animation-delay: 160ms; }
+.streaming-content > *:nth-child(4) { animation-delay: 240ms; }
+.streaming-content > *:nth-child(5) { animation-delay: 320ms; }
+.streaming-content > *:nth-child(6) { animation-delay: 400ms; }
+
+// Stagger list items
+.streaming-content ul > li:nth-child(1) { animation-delay: 0ms; }
+.streaming-content ul > li:nth-child(2) { animation-delay: 60ms; }
+.streaming-content ul > li:nth-child(3) { animation-delay: 120ms; }
+.streaming-content ul > li:nth-child(4) { animation-delay: 180ms; }
+.streaming-content ul > li:nth-child(5) { animation-delay: 240ms; }
+
+// Force animation restart when content changes
+.streaming-content[data-animation-version] {
+  > * {
+    animation: none;
+  }
+  
+  > *:nth-child(1) { animation: fadeInUp 0.4s ease-out 0ms forwards; }
+  > *:nth-child(2) { animation: fadeInUp 0.4s ease-out 80ms forwards; }
+  > *:nth-child(3) { animation: fadeInUp 0.4s ease-out 160ms forwards; }
+  > *:nth-child(4) { animation: fadeInUp 0.4s ease-out 240ms forwards; }
+  > *:nth-child(5) { animation: fadeInUp 0.4s ease-out 320ms forwards; }
+  > *:nth-child(6) { animation: fadeInUp 0.4s ease-out 400ms forwards; }
+}

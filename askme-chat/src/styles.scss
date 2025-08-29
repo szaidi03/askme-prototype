@@ -5,7 +5,7 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$violet-palette,
+        primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
       typography: Roboto,
@@ -48,6 +48,14 @@ html {
     @include mat.icon-overrides(
       (
         color: white,
+      )
+    );
+  }
+
+  .database-selector {
+    @include mat.theme-overrides(
+      (
+        density: -3,
       )
     );
   }

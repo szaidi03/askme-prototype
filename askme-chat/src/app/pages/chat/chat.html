@@ -10,7 +10,7 @@
       <!-- User Message -->
       <div
         *ngIf="message.isUser"
-        class="bg-[var(--mat-sys-primary)] text-white rounded-br-none rounded-xl px-4 py-2 w-fit"
+        class="bg-[var(--mat-sys-primary)] text-white  rounded-xl px-4 py-2 w-fit"
       >
         {{ message.content }}
       </div>
@@ -18,7 +18,7 @@
       <!-- Assistant Message -->
       <div
         *ngIf="!message.isUser"
-        class="bg-white rounded-bl-none rounded-xl px-4 py-2 w-fit shadow-sm border"
+        class="bg-white  rounded-xl px-4 py-2 w-fit shadow-sm border"
         [ngClass]="{'border-red-300 bg-red-50': message.error}"
       >
         <div class="flex items-center space-x-2">
@@ -29,7 +29,11 @@
           </mat-icon>
           <div class="flex-1">
             <ng-container *ngIf="message.content && message.content.length > 0; else loadingDots">
-              <span [innerHTML]="parseMarkdown(message.content)"></span>
+              <div 
+                [attr.data-animation-version]="animationVersion()"
+                class="streaming-content"
+                [innerHTML]="parseMarkdown(message.content)">
+              </div>
             </ng-container>
             <ng-template #loadingDots>
               <div class="flex space-x-1 py-0.5">
@@ -43,6 +47,28 @@
       </div>
     </div>
     }
+
+    <!-- Preset Question Cards -->
+    <div *ngIf="showPresetQuestions()" class="flex-1 flex items-center justify-center">
+      <div class="max-w-2xl w-full">
+        <div class="text-center mb-8">
+          <h2 class="text-2xl font-semibold text-gray-800 mb-2">What would you like to know?</h2>
+          <p class="text-gray-600">Choose a question to get started or type your own</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            *ngFor="let question of presetQuestions()" 
+            class="bg-white border border-blue-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 hover:border-blue-300"
+            (click)="onPresetQuestionClick(question)"
+          >
+            <div class="flex items-center space-x-3 w-fit">
+              <mat-icon class="text-blue-500 mt-0.5 min-w-fit">help_outline</mat-icon>
+              <p class="text-gray-700 text-sm leading-relaxed">{{ question }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- No separate global loading bubble; dots are shown inside the streaming message -->
   </div>
@@ -74,5 +100,7 @@
         <mat-icon>send</mat-icon>
       </button>
     </mat-form-field>
+
+    
   </div>
 </div>
