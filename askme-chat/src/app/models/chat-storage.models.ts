@@ -8,13 +8,13 @@ export interface StoredChatMessage {
 }
 
 export interface ChatSession {
-  id: string;
+  id: string; // Local storage session ID
   name: string;
   createdAt: number;
   updatedAt: number;
   messageCount: number;
   lastMessage?: string;
-  sessionId?: string; // API session ID if needed
+  apiSessionId?: string; // API session ID for backend continuity
 }
 
 export interface StoredChatSession extends ChatSession {

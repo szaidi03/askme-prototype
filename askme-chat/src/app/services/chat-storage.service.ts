@@ -95,7 +95,7 @@ export class ChatStorageService {
     }
   }
 
-  async createSession(name: string, initialMessages?: StoredChatMessage[]): Promise<string> {
+  async createSession(name: string, initialMessages?: StoredChatMessage[], apiSessionId?: string): Promise<string> {
     const db = await this.ensureDB();
     const sessionId = this.generateId();
     const now = Date.now();
@@ -106,7 +106,8 @@ export class ChatStorageService {
       createdAt: now,
       updatedAt: now,
       messageCount: initialMessages?.length || 0,
-      lastMessage: initialMessages?.length ? initialMessages[initialMessages.length - 1].content : undefined
+      lastMessage: initialMessages?.length ? initialMessages[initialMessages.length - 1].content : undefined,
+      apiSessionId: apiSessionId // Store the API session ID for backend continuity
     };
 
     const transaction = db.transaction([this.SESSIONS_STORE, this.MESSAGES_STORE], 'readwrite');
@@ -207,6 +208,27 @@ export class ChatStorageService {
       }
     } catch (error) {
       console.error('Failed to update session name:', error);
+      throw error;
+    }
+  }
+
+  async updateApiSessionId(sessionId: string, apiSessionId: string): Promise<void> {
+    const db = await this.ensureDB();
+    const transaction = db.transaction([this.SESSIONS_STORE], 'readwrite');
+    
+    try {
+      const store = transaction.objectStore(this.SESSIONS_STORE);
+      const session = await this.promisifyRequest(store.get(sessionId)) as ChatSession;
+      
+      if (session) {
+        session.apiSessionId = apiSessionId;
+        session.updatedAt = Date.now();
+        await this.promisifyRequest(store.put(session));
+        await this.loadSessions();
+        console.log('Updated API session ID for session:', sessionId, 'to:', apiSessionId);
+      }
+    } catch (error) {
+      console.error('Failed to update API session ID:', error);
       throw error;
     }
   }

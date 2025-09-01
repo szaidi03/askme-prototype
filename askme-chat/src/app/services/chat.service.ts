@@ -38,11 +38,31 @@ export class ChatService {
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
-    console.log('Generated session ID:', this.sessionId);
+    console.log('Generated new API session ID:', this.sessionId);
   }
 
   getSessionId(): string {
     return this.sessionId;
+  }
+
+  // Method to restore a specific session ID from a previous chat
+  restoreSessionId(sessionId: string): void {
+    this.sessionId = sessionId;
+    console.log('Restored API session ID from previous chat:', this.sessionId);
+  }
+
+  // Method to generate a new session ID for fresh chats
+  generateNewSessionId(): void {
+    this.generateSessionId();
+  }
+
+  // Debug method to help verify session ID synchronization
+  debugSessionInfo(): void {
+    console.log('=== Chat Service Session Debug ===');
+    console.log('Current API Session ID:', this.sessionId);
+    console.log('Session ID Length:', this.sessionId.length);
+    console.log('Session ID Valid:', this.sessionId.length > 0);
+    console.log('===============================');
   }
 
   async streamResponse(prompt: string): Promise<Response> {

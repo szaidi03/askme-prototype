@@ -120,22 +120,76 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   sendMessage() {
     if (!this.currentMessage().trim() || this.isTyping()) return;
 
+    const userMessage = this.currentMessage();
+    this.currentMessage.set('');
+
     // Add user message
     this.messages.update(previousMessages => ([
       ...previousMessages,
       {
         id: this.generateId(),
-        content: this.currentMessage(),
+        content: userMessage,
         isUser: true
       }
     ]));
 
-    const userMessage = this.currentMessage();
-    this.currentMessage.set('');
+    // IMPORTANT: Save the user message immediately
+    this.saveUserMessage(userMessage);
+
     this.isTyping.set(true);
 
     // Start streaming response from API
     this.streamResponse(userMessage);
+  }
+
+  // New method to save user messages immediately
+  private async saveUserMessage(content: string) {
+    try {
+      const message: StoredChatMessage = {
+        id: this.generateId(),
+        content: content,
+        isUser: true,
+        timestamp: Date.now()
+      };
+
+      let sessionId = this.currentSessionId();
+      
+      if (!sessionId) {
+        // Create new session with the current API session ID
+        const name = `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+        const currentApiSessionId = this.chatService.getSessionId();
+        sessionId = await this.chatStorageService.createSession(name, [message], currentApiSessionId);
+        this.currentSessionId.set(sessionId);
+        this.isSessionSaved.set(true);
+        console.log('Created new session with user message, API session ID:', currentApiSessionId);
+      } else {
+        // Save message to existing session
+        await this.chatStorageService.saveMessage(sessionId, message);
+        console.log('Saved user message to existing session:', sessionId);
+      }
+    } catch (error) {
+      console.error('Failed to save user message:', error);
+    }
+  }
+
+  // New method to save AI responses when streaming is complete
+  private async saveAIResponse(content: string) {
+    try {
+      const message: StoredChatMessage = {
+        id: this.generateId(),
+        content: content,
+        isUser: false,
+        timestamp: Date.now()
+      };
+
+      const sessionId = this.currentSessionId();
+      if (sessionId) {
+        await this.chatStorageService.saveMessage(sessionId, message);
+        console.log('Saved AI response to session:', sessionId);
+      }
+    } catch (error) {
+      console.error('Failed to save AI response:', error);
+    }
   }
 
   private async streamResponse(userMessage: string) {
@@ -181,8 +235,9 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
       this.finishStreaming(streamingIndex);
       
-      // Auto-save the session after receiving the AI response
-      await this.saveCurrentSession();
+      // Save the AI response when streaming is complete
+      const aiResponse = this.messages()[streamingIndex].content;
+      await this.saveAIResponse(aiResponse);
 
     } catch (error: any) {
       console.error('Streaming error:', error);
@@ -219,6 +274,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     if (event.key === 'Enter' && !event.shiftKey) {
       console.log('Enter pressed');
       event.preventDefault();
+      
       this.sendMessage();
     }
   }
@@ -250,11 +306,13 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
 
       let sessionId = this.currentSessionId();
       
-      if (!sessionId) {
-        // Create new session
-        const name = sessionName || `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
-        sessionId = await this.chatStorageService.createSession(name, storedMessages);
-        this.currentSessionId.set(sessionId);
+              if (!sessionId) {
+          // Create new session with the current API session ID
+          const name = sessionName || `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+          const currentApiSessionId = this.chatService.getSessionId();
+          sessionId = await this.chatStorageService.createSession(name, storedMessages, currentApiSessionId);
+          this.currentSessionId.set(sessionId);
+          console.log('Created new session with API session ID:', currentApiSessionId);
       } else {
         // Update existing session by saving the latest message
         const lastMessage = storedMessages[storedMessages.length - 1];
@@ -285,6 +343,17 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
         this.messages.set(chatMessages);
         this.currentSessionId.set(sessionId);
         this.isSessionSaved.set(true);
+        
+        // IMPORTANT: Restore the API session ID from the loaded session
+        // This ensures API calls use the same session ID as the original conversation
+        if (session.apiSessionId) {
+          this.chatService.restoreSessionId(session.apiSessionId);
+          console.log('Restored API session ID for conversation continuity:', session.apiSessionId);
+        } else {
+          console.warn('No API session ID found in loaded session, generating new one');
+          this.chatService.generateNewSessionId();
+        }
+        
         console.log('Session loaded:', sessionId);
       }
     } catch (error) {
@@ -304,8 +373,30 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     this.isSessionSaved.set(false);
     this.currentMessage.set('');
     
-    // The chat service already manages its own session ID
-    console.log('New chat started with session ID:', this.chatService.getSessionId());
+    // Generate a new API session ID for the fresh chat
+    this.chatService.generateNewSessionId();
+    
+    console.log('New chat started with fresh API session ID:', this.chatService.getSessionId());
+  }
+
+  // Debug method to help verify session ID synchronization
+  debugSessionInfo(): void {
+    console.log('=== Chat Component Session Debug ===');
+    console.log('Local Storage Session ID:', this.currentSessionId());
+    console.log('API Session ID:', this.chatService.getSessionId());
+    console.log('Session Saved:', this.isSessionSaved());
+    console.log('===============================');
+  }
+
+  // Debug method to show current message status
+  debugMessageStatus(): void {
+    console.log('=== Message Status Debug ===');
+    console.log('Total Messages:', this.messages().length);
+    console.log('User Messages:', this.messages().filter(msg => msg.isUser).length);
+    console.log('AI Messages:', this.messages().filter(msg => !msg.isUser).length);
+    console.log('Current Session ID:', this.currentSessionId());
+    console.log('Session Saved:', this.isSessionSaved());
+    console.log('==========================');
   }
 
   private scrollToBottom(): void {
