@@ -1,4 +1,12 @@
 <mat-toolbar class="header-toolbar shadow-md">
+  <button 
+    mat-icon-button 
+    (click)="onMenuToggle()"
+    [matTooltip]="'Chat History'"
+    class="mr-2"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
   <mat-icon class="ml-1 mr-3">chat</mat-icon>
   <span class="text-xl font-semibold mr-4">Athena (Ask Me)</span>
 
@@ -35,10 +43,14 @@
       [disabled]="isLoading()"
       placeholder="Select Database"
     >
-      <mat-option *ngFor="let database of databases()" [value]="database">
-        {{ database }}
-      </mat-option>
+      @for (database of databases(); track database) {
+        <mat-option [value]="database">
+          {{ database }}
+        </mat-option>
+      }
     </mat-select>
-    <mat-icon matSuffix *ngIf="isLoading()">hourglass_empty</mat-icon>
+    @if (isLoading()) {
+      <mat-icon matSuffix>hourglass_empty</mat-icon>
+    }
   </mat-form-field>
 </mat-toolbar>

@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewChecked, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewChecked, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,8 +6,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Subject, takeUntil } from 'rxjs';
 import { ChatService, ChatMessage, StreamResponse } from '../../services/chat.service';
+import { ChatStorageService } from '../../services/chat-storage.service';
+import { SessionManagerService } from '../../services/session-manager.service';
+import { StoredChatMessage, StoredChatSession } from '../../models/chat-storage.models';
 
 @Component({
   selector: 'app-chat',
@@ -17,7 +23,9 @@ import { ChatService, ChatMessage, StreamResponse } from '../../services/chat.se
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatMenuModule,
+    MatDialogModule
   ],
   templateUrl: './chat.html',
   styleUrl: './chat.scss',
@@ -30,11 +38,15 @@ import { ChatService, ChatMessage, StreamResponse } from '../../services/chat.se
     ])
   ]
 })
-export class Chat implements OnInit, AfterViewChecked {
+export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('chatContainer') private chatContainer!: ElementRef;
   
   private chatService = inject(ChatService);
+  private chatStorageService = inject(ChatStorageService);
+  private sessionManager = inject(SessionManagerService);
   private sanitizer = inject(DomSanitizer);
+  private dialog = inject(MatDialog);
+  private destroy$ = new Subject<void>();
 
   messages = signal<ChatMessage[]>([
     {
@@ -49,6 +61,10 @@ export class Chat implements OnInit, AfterViewChecked {
   
   currentMessage = signal('');
   isTyping = signal(false);
+  
+  // Current session management
+  currentSessionId = signal<string | null>(null);
+  isSessionSaved = signal(false);
   
   // Preset questions
   presetQuestions = signal([
@@ -69,10 +85,28 @@ export class Chat implements OnInit, AfterViewChecked {
   ngOnInit() {
     // Session ID is now handled by the service
     console.log('Session ID:', this.chatService.getSessionId());
+    
+    // Listen for session changes from the app component
+    this.sessionManager.sessionEvent$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        if (event) {
+          if (event.type === 'load' && event.sessionId) {
+            this.loadSession(event.sessionId);
+          } else if (event.type === 'new') {
+            this.startNewChat();
+          }
+        }
+      });
   }
 
   ngAfterViewChecked() {
     this.scrollToBottom();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private generateId(): string {
@@ -146,6 +180,9 @@ export class Chat implements OnInit, AfterViewChecked {
       });
 
       this.finishStreaming(streamingIndex);
+      
+      // Auto-save the session after receiving the AI response
+      await this.saveCurrentSession();
 
     } catch (error: any) {
       console.error('Streaming error:', error);
@@ -190,6 +227,85 @@ export class Chat implements OnInit, AfterViewChecked {
     // Set the question as the current message and send it
     this.currentMessage.set(question);
     this.sendMessage();
+  }
+
+  async saveCurrentSession(sessionName?: string) {
+    const messages = this.messages();
+    const userMessages = messages.filter(msg => msg.isUser);
+    
+    // Don't save sessions with only the greeting message
+    if (userMessages.length === 0) {
+      return;
+    }
+
+    try {
+      const storedMessages: StoredChatMessage[] = messages.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        isUser: msg.isUser,
+        timestamp: Date.now(),
+        isStreaming: msg.isStreaming,
+        error: msg.error
+      }));
+
+      let sessionId = this.currentSessionId();
+      
+      if (!sessionId) {
+        // Create new session
+        const name = sessionName || `Chat ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+        sessionId = await this.chatStorageService.createSession(name, storedMessages);
+        this.currentSessionId.set(sessionId);
+      } else {
+        // Update existing session by saving the latest message
+        const lastMessage = storedMessages[storedMessages.length - 1];
+        if (lastMessage) {
+          await this.chatStorageService.saveMessage(sessionId, lastMessage);
+        }
+      }
+      
+      this.isSessionSaved.set(true);
+      console.log('Session saved:', sessionId);
+    } catch (error) {
+      console.error('Failed to save session:', error);
+    }
+  }
+
+  async loadSession(sessionId: string) {
+    try {
+      const session = await this.chatStorageService.getSession(sessionId);
+      if (session) {
+        const chatMessages: ChatMessage[] = session.messages.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          isUser: msg.isUser,
+          isStreaming: msg.isStreaming,
+          error: msg.error
+        }));
+
+        this.messages.set(chatMessages);
+        this.currentSessionId.set(sessionId);
+        this.isSessionSaved.set(true);
+        console.log('Session loaded:', sessionId);
+      }
+    } catch (error) {
+      console.error('Failed to load session:', error);
+    }
+  }
+
+  startNewChat() {
+    this.messages.set([
+      {
+        id: this.generateId(),
+        content: 'Hello! I\'m Ask Me, your AI assistant. How can I help you today?',
+        isUser: false
+      }
+    ]);
+    this.currentSessionId.set(null);
+    this.isSessionSaved.set(false);
+    this.currentMessage.set('');
+    
+    // The chat service already manages its own session ID
+    console.log('New chat started with session ID:', this.chatService.getSessionId());
   }
 
   private scrollToBottom(): void {

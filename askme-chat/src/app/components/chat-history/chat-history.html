@@ -1,0 +1,83 @@
+<div class="chat-history-container h-full flex flex-col">
+  <div class="p-4 border-b">
+    <h2 class="text-lg font-semibold mb-3">Chat History</h2>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="onNewChat()"
+      class="w-full mb-2"
+    >
+      <mat-icon>add</mat-icon>
+      New Chat
+    </button>
+    <button 
+      mat-stroked-button 
+      (click)="onClearAllSessions()"
+      class="w-full text-sm"
+    >
+      Clear All History
+    </button>
+  </div>
+
+  <div class="flex-1 overflow-y-auto">
+    @if (sessions().length === 0) {
+      <div class="p-4 text-center text-gray-500">
+        <mat-icon class="text-4xl mb-2">chat_bubble_outline</mat-icon>
+        <p>No saved chats yet</p>
+        <p class="text-sm">Start a conversation to save chat history</p>
+      </div>
+    } @else {
+      <mat-nav-list>
+        @for (session of sessions(); track session.id) {
+          <mat-list-item 
+            class="session-item cursor-pointer hover:bg-gray-50"
+            (click)="onSessionClick(session.id)"
+          >
+            <div class="w-full">
+              <div class="flex justify-between items-start">
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-medium text-sm truncate mb-1">
+                    {{ session.name }}
+                  </h4>
+                  <p class="text-xs text-gray-500 mb-1">
+                    {{ truncateMessage(session.lastMessage) }}
+                  </p>
+                  <p class="text-xs text-gray-400">
+                    {{ formatDate(session.updatedAt) }} • {{ session.messageCount }} messages
+                  </p>
+                </div>
+                
+                <button 
+                  mat-icon-button 
+                  [matMenuTriggerFor]="sessionMenu"
+                  (click)="$event.stopPropagation()"
+                  class="ml-2"
+                >
+                  <mat-icon class="text-gray-400">more_vert</mat-icon>
+                </button>
+                
+                <mat-menu #sessionMenu="matMenu">
+                  <button 
+                    mat-menu-item 
+                    (click)="onRenameSession(session, $event)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                    <span>Rename</span>
+                  </button>
+                  <button 
+                    mat-menu-item 
+                    (click)="onDeleteSession(session, $event)"
+                    class="text-red-600"
+                  >
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+          </mat-list-item>
+        }
+      </mat-nav-list>
+    }
+  </div>
+</div>

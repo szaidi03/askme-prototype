@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, inject } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,6 +28,8 @@ import { Router } from '@angular/router';
   styleUrl: './header.scss'
 })
 export class Header implements OnInit {
+  @Output() menuToggle = new EventEmitter<void>();
+
   private databaseService = inject(DatabaseService);
   private router = inject(Router);
   databases = signal<string[]>([]);
@@ -58,6 +60,10 @@ export class Header implements OnInit {
   onDatabaseChange(database: string) {
     this.selectedDatabase.set(database);
     console.log('Selected database:', database);
+  }
+
+  onMenuToggle() {
+    this.menuToggle.emit();
   }
 
   resetChat() {

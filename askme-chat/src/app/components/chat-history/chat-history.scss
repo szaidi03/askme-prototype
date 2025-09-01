@@ -1,0 +1,21 @@
+.chat-history-container {
+  background-color: #fafafa;
+  
+  .session-item {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 16px;
+    
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
+  
+  .mat-mdc-list-item {
+    height: auto !important;
+    min-height: 72px;
+  }
+  
+  .mat-mdc-list-item-content {
+    padding: 0;
+  }
+}
