@@ -12,7 +12,7 @@ import { SessionManagerService } from './services/session-manager.service';
   styleUrl: './app.scss'
 })
 export class App {
-  title = 'Ask Me';
+  title = 'Athena';
   
   private sessionManager = inject(SessionManagerService);
   

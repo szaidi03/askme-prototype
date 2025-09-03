@@ -51,7 +51,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
   messages = signal<ChatMessage[]>([
     {
       id: this.generateId(),
-      content: 'Hello! I\'m Ask Me, your AI assistant. How can I help you today?',
+      content: 'Hello! I\'m Athena, your AI assistant. How can I help you today?',
       isUser: false
     }
   ]);
@@ -365,7 +365,7 @@ export class Chat implements OnInit, AfterViewChecked, OnDestroy {
     this.messages.set([
       {
         id: this.generateId(),
-        content: 'Hello! I\'m Ask Me, your AI assistant. How can I help you today?',
+        content: 'Hello! I\'m Athena, your AI assistant. How can I help you today?',
         isUser: false
       }
     ]);
