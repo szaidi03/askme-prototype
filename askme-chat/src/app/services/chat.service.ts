@@ -76,7 +76,7 @@ export class ChatService {
       body: requestBody
     });
 
-    const response = await fetch('https://athena.assyst.net/api/suggest_catalog_stream/', {
+    const response = await fetch('https://athena.assysthq.local/api/suggest_catalog_stream/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export class ChatService {
             UserPrompt: prompt
           };
 
-          const response = await fetch('https://athena.assyst.net/api/suggest_catalog_stream/', {
+          const response = await fetch('https://athena.assysthq.local/api/suggest_catalog_stream/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -163,6 +163,6 @@ export class ChatService {
       UserPrompt: prompt
     };
 
-    return this.http.post('https://athena.assyst.net/api/suggest_catalog_stream', requestBody);
+    return this.http.post('https://athena.assysthq.local/api/suggest_catalog_stream', requestBody);
   }
 }
