@@ -11,7 +11,7 @@ export interface DatabaseListResponse {
 })
 export class DatabaseService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://athena.assyst.net/api/list_database';
+  private apiUrl = 'https://athena.assysthq.local/api/list_database';
 
   getDatabaseList(): Observable<DatabaseListResponse> {
     return this.http.get<DatabaseListResponse>(this.apiUrl, {
