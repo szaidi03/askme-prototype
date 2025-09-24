@@ -1,13 +1,12 @@
 import { Component, signal, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { Header } from './components/header/header';
 import { ChatHistory } from './components/chat-history/chat-history';
 import { SessionManagerService } from './services/session-manager.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Header, MatSidenavModule, ChatHistory],
+  imports: [RouterOutlet, Header, ChatHistory],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -16,23 +15,22 @@ export class App {
   
   private sessionManager = inject(SessionManagerService);
   
-  sidenavOpened = signal(false);
+  sidenavCollapsed = signal(false);
   
   onToggleSidenav() {
-    this.sidenavOpened.update(opened => !opened);
+    // This can be used to show/hide the sidebar if needed
+    // For now, we'll keep it for compatibility
   }
 
-  onCloseSidenav() {
-    this.sidenavOpened.set(false);
+  onToggleCollapse() {
+    this.sidenavCollapsed.update(collapsed => !collapsed);
   }
 
   onSessionSelected(sessionId: string) {
-    this.onCloseSidenav();
     this.sessionManager.loadSession(sessionId);
   }
 
   onNewChatRequested() {
-    this.onCloseSidenav();
     this.sessionManager.startNewChat();
   }
 }

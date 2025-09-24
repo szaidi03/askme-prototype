@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full bg-gray-50">
+<div class="flex flex-col h-full bg-white">
   <!-- Chat Messages Container -->
   <div #chatContainer class="flex-1 overflow-y-auto p-4 space-y-4">
     @for(message of messages(); track message.id) {
@@ -22,11 +22,12 @@
         [ngClass]="{'border-red-300 bg-red-50': message.error}"
       >
         <div class="flex items-center space-x-2">
-          <mat-icon 
+          <!-- <mat-icon 
             [class]="message.error ? 'text-red-500' : 'text-blue-500'"
           >
             {{ message.error ? 'error' : 'smart_toy' }}
-          </mat-icon>
+          </mat-icon> -->
+          <img src="Athena-Final-Cropped.PNG" alt="Athena" class="w-6 h-6 mr-2">
           <div class="flex-1">
             <ng-container *ngIf="message.content && message.content.length > 0; else loadingDots">
               <div 

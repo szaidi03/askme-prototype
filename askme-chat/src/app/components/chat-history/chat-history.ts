@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, signal, inject, OnInit, OnDestroy, Inject } from '@angular/core';
+import { Component, EventEmitter, Output, Input, signal, inject, OnInit, OnDestroy, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { ChatStorageService } from '../../services/chat-storage.service';
 import { ChatSession } from '../../models/chat-storage.models';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-rename-dialog',
@@ -46,15 +47,18 @@ export class RenameDialogComponent {
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
-    MatDialogModule
+    MatDialogModule,
+    MatTooltipModule,
   ],
   templateUrl: './chat-history.html',
   styleUrl: './chat-history.scss'
 })
 export class ChatHistory implements OnInit, OnDestroy {
+  @Input() collapsed = false;
   @Output() sessionSelected = new EventEmitter<string>();
   @Output() newChatRequested = new EventEmitter<void>();
-
+  @Output() menuToggle = new EventEmitter<void>();
+  @Output() toggleCollapse = new EventEmitter<void>();
   private chatStorageService = inject(ChatStorageService);
   private dialog = inject(MatDialog);
   private destroy$ = new Subject<void>();
@@ -142,5 +146,13 @@ export class ChatHistory implements OnInit, OnDestroy {
   truncateMessage(message: string | undefined, maxLength: number = 50): string {
     if (!message) return 'No messages yet';
     return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
+  }
+
+  onMenuToggle() {
+    this.menuToggle.emit();
+  }
+
+  onToggleCollapse() {
+    this.toggleCollapse.emit();
   }
 }

@@ -1,27 +1,28 @@
-<div class="h-screen">
-  <mat-sidenav-container class="h-full">
-    <mat-sidenav 
-      #sidenav 
-      mode="over" 
-      [opened]="sidenavOpened()"
-      (openedChange)="!$event && onCloseSidenav()"
-      class="w-80"
-    >
-      <app-chat-history
-        (sessionSelected)="onSessionSelected($event)"
-        (newChatRequested)="onNewChatRequested()"
-      ></app-chat-history>
-    </mat-sidenav>
-    
-    <mat-sidenav-content class="flex flex-col h-full">
-      <app-header 
-        class="border-black-200"
-        (menuToggle)="onToggleSidenav()"
-      ></app-header>
-      <!-- <app-menu-bar></app-menu-bar> -->
-      <main class="flex-1 overflow-hidden h-[calc(100vh-64px)]">
-        <router-outlet></router-outlet>
-      </main>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+<div class="h-screen flex">
+  <!-- Custom Sidebar -->
+  <div 
+    class="sidebar"
+    [class.collapsed]="sidenavCollapsed()"
+  >
+    <app-chat-history
+      [collapsed]="sidenavCollapsed()"
+      (sessionSelected)="onSessionSelected($event)"
+      (newChatRequested)="onNewChatRequested()"
+      (menuToggle)="onToggleSidenav()"
+      (toggleCollapse)="onToggleCollapse()"
+    ></app-chat-history>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="main-content flex flex-col h-full flex-1">
+    <app-header 
+      class="border-black-200"
+      (menuToggle)="onToggleSidenav()"
+      (toggleCollapse)="onToggleCollapse()"
+    ></app-header>
+    <!-- <app-menu-bar></app-menu-bar> -->
+    <main class="flex-1 overflow-hidden h-[calc(100vh-64px)]">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 </div>

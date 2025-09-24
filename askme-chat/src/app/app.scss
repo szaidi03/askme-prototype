@@ -1,0 +1,18 @@
+.sidebar {
+  width: 320px; /* w-80 equivalent */
+  height: 100vh;
+  background-color: #fafafa;
+  border-right: 1px solid #e5e7eb;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  flex-shrink: 0;
+  
+  &.collapsed {
+    width: 64px; /* w-16 equivalent */
+  }
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing */
+}

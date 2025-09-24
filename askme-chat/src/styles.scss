@@ -41,13 +41,13 @@ html {
   .header-toolbar {
     @include mat.toolbar-overrides(
       (
-        container-background-color: var(--mat-sys-primary),
-        container-text-color: white,
+        container-background-color: white,
+        container-text-color: black,
       )
     );
     @include mat.icon-overrides(
       (
-        color: white,
+        color: black,
       )
     );
   }

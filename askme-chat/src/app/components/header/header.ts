@@ -29,6 +29,7 @@ import { Router } from '@angular/router';
 })
 export class Header implements OnInit {
   @Output() menuToggle = new EventEmitter<void>();
+  @Output() toggleCollapse = new EventEmitter<void>();
 
   private databaseService = inject(DatabaseService);
   private router = inject(Router);
@@ -64,6 +65,10 @@ export class Header implements OnInit {
 
   onMenuToggle() {
     this.menuToggle.emit();
+  }
+
+  onToggleCollapse() {
+    this.toggleCollapse.emit();
   }
 
   resetChat() {
