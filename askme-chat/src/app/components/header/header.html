@@ -41,7 +41,7 @@
       [value]="selectedDatabase()"
       (selectionChange)="onDatabaseChange($event.value)"
       [disabled]="isLoading()"
-      placeholder="Select Database"
+      placeholder="Select Catalog"
     >
       @for (database of databases(); track database) {
         <mat-option [value]="database">
