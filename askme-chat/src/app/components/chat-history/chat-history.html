@@ -1,17 +1,17 @@
 <div class="chat-history-container h-full flex flex-col" [class.collapsed]="collapsed">
   <div class="p-4 border-b ml-[-4px]">
-    <div class="w-full flex justify-between items-center">
-      @if (!collapsed) {
-      <h2 class="text-lg font-semibold mb-3">Chat History</h2>
-      }
+    <div class="w-full flex justify-start items-center">
       <!-- [matTooltip]="collapsed ? 'Expand' : 'Close'"  -->
       <button
         mat-icon-button
         (click)="collapsed ? onToggleCollapse() : onToggleCollapse()"
         class="mt-[-10px]"
       >
-        <mat-icon>{{ collapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        <mat-icon>{{ collapsed ? 'chevron_left' : 'chevron_right' }}</mat-icon>
       </button>
+      @if (!collapsed) {
+      <h2 class="text-lg font-semibold mb-3">Chat History</h2>
+      }
     </div>
     @if (!collapsed) {
     <button
@@ -25,11 +25,11 @@
 
       <span class="ml-2">New Chat</span>
     </button>
-    
+
     <button mat-stroked-button (click)="onClearAllSessions()" class="w-full text-sm">
       Clear All History
     </button>
-  }@else {
+    }@else {
     <button
       mat-icon-button
       class=""
@@ -38,7 +38,7 @@
     >
       <mat-icon>add</mat-icon>
     </button>
-  }
+    }
   </div>
 
   <div class="flex-1 overflow-y-auto">

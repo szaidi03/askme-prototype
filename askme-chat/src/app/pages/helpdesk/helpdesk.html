@@ -1,0 +1,503 @@
+<div class="helpdesk-portal">
+  <!-- Left Navigation Sidebar -->
+  <div class="sidebar">
+    <div class="nav-section">
+      <h3 class="nav-title">Main Navigation</h3>
+      <nav class="nav-menu">
+        <a 
+          *ngFor="let item of navItems" 
+          class="nav-item"
+          [class.active]="item.active"
+          (click)="onNavItemClick(item)"
+        >
+          <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+          <span class="nav-text">{{ item.title }}</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="nav-section">
+      <h3 class="nav-title">Quick Actions</h3>
+      <div class="quick-actions">
+        <button 
+          *ngFor="let action of quickActions" 
+          class="quick-action-btn"
+          (click)="onQuickActionClick(action)"
+        >
+          <mat-icon class="action-icon">{{ action.icon }}</mat-icon>
+          <span class="action-text">{{ action.title }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Tier Tabs -->
+    <div class="tier-tabs">
+      <button 
+        *ngFor="let tier of supportTiers" 
+        class="tier-tab"
+        [class.active]="selectedTier === tier.level"
+        (click)="onTierSelect(tier.level)"
+        [class]="'tier-tab tier-' + tier.level"
+      >
+        <span class="tier-number">Tier {{ tier.level }}</span>
+        <span class="tier-name">{{ tier.name }}</span>
+      </button>
+    </div>
+
+    <!-- Tier 0: Self Service Content -->
+    <div *ngIf="selectedTier === 0" class="tier-content">
+      <!-- Search Section: Full Width -->
+      <div class="content-section search-section">
+        <mat-card class="search-card">
+          <mat-card-header>
+            <mat-card-title>Search Knowledge Base</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="search-container">
+              <mat-form-field class="search-field" appearance="outline">
+                <mat-label>Search knowledge base</mat-label>
+                <input 
+                  matInput 
+                  [(ngModel)]="searchQuery"
+                  placeholder="e.g. How to connect to VPN"
+                  (keydown.enter)="onSearch()"
+                >
+              </mat-form-field>
+              <button 
+                mat-raised-button 
+                color="primary" 
+                class="search-btn"
+                (click)="onSearch()"
+                [disabled]="isSearching"
+              >
+                <mat-icon *ngIf="!isSearching">search</mat-icon>
+                <mat-spinner *ngIf="isSearching" diameter="20"></mat-spinner>
+                Search
+              </button>
+            </div>
+            <div class="search-tip">
+              <mat-icon class="tip-icon">lightbulb</mat-icon>
+              <span>Tip: try natural language queries like 'printer not printing'</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Top Section: FAQ and Analytics -->
+      <div class="content-section top-row">
+        <!-- FAQ Card -->
+        <mat-card class="faq-card">
+          <mat-card-header>
+            <mat-card-title>FAQ</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="faq-list">
+              <div 
+                *ngFor="let article of topArticles.slice(0, 3)" 
+                class="faq-item"
+                (click)="onArticleClick(article)"
+              >
+                <mat-icon class="faq-icon">help_outline</mat-icon>
+                <span class="faq-title">{{ article.title }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Analytics Dashboard Card -->
+        <mat-card class="analytics-card">
+          <mat-card-header>
+            <mat-card-title>Analytics Dashboard</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="analytics-content">
+              <div class="metric-item">
+                <div class="metric-value">{{ dailyChatUsage }}</div>
+                <div class="metric-label">Chatbot Usage Today</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-value">{{ weeklyTrend }}%</div>
+                <div class="metric-label">Weekly Trend</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-value">{{ resolutionRate }}%</div>
+                <div class="metric-label">Resolution Rate</div>
+              </div>
+            </div>
+            <div class="trend-chart">
+              <div class="chart-title">Usage Trends (Last 7 Days)</div>
+              <div class="chart-bars">
+                <div 
+                  *ngFor="let day of weeklyData" 
+                  class="chart-bar"
+                  [style.height.%]="day.usage"
+                  [title]="day.day + ': ' + day.count + ' interactions'"
+                ></div>
+              </div>
+              <div class="chart-labels">
+                <span *ngFor="let day of weeklyData">{{ day.day }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Middle Section: Three Main Cards -->
+      <div class="content-section three-columns">
+        <!-- Chat Box Card -->
+        <mat-card class="chat-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon class="card-icon">chat</mat-icon>
+              Advanced Service
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chat-container">
+              <div class="chat-messages">
+                <div 
+                  *ngFor="let message of chatMessages" 
+                  class="chat-message"
+                  [class.bot-message]="!message.isUser"
+                  [class.user-message]="message.isUser"
+                >
+                  <div class="message-content">
+                    <mat-icon class="message-icon">{{ message.isUser ? 'person' : 'smart_toy' }}</mat-icon>
+                    <p>{{ message.content }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="chat-input-container">
+                <mat-form-field class="chat-input" appearance="outline">
+                  <mat-label>Type your message...</mat-label>
+                  <input 
+                    matInput 
+                    [(ngModel)]="chatMessage"
+                    placeholder="Ask me anything..."
+                    (keydown.enter)="onChatSend()"
+                  >
+                </mat-form-field>
+                <button 
+                  mat-icon-button 
+                  color="primary" 
+                  class="chat-send-btn"
+                  (click)="onChatSend()"
+                  [disabled]="!chatMessage.trim()"
+                >
+                  <mat-icon>send</mat-icon>
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- AI Assistant Card -->
+        <mat-card class="feature-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon class="card-icon">smart_toy</mat-icon>
+              AI Assistant
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="card-description">
+              Start a full chat session or choose a guided flow.
+            </p>
+            <div class="card-actions">
+              <button mat-raised-button color="primary" (click)="onStartChat()">
+                Start Full Chat
+              </button>
+              <button mat-stroked-button (click)="onGuidedTroubleshooting()">
+                Guided Troubleshooting
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Self-Service Tools Card -->
+        <mat-card class="feature-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon class="card-icon">build</mat-icon>
+              Self-Service Tools
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="card-description">
+              Quick actions to resolve common tasks.
+            </p>
+            <div class="card-actions">
+              <button mat-raised-button color="primary" (click)="onPasswordReset()">
+                Password Reset
+              </button>
+              <button mat-stroked-button (click)="onRequestSoftware()">
+                Request Software
+              </button>
+              <button mat-stroked-button (click)="onTrackTicket()">
+                Track Ticket
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Bottom Section: Resolution and Escalation Screens -->
+      <div class="content-section two-columns">
+        <!-- Resolution Screen Card -->
+        <mat-card class="resolution-card">
+          <mat-card-header>
+            <mat-card-title>Resolution</mat-card-title>
+            <mat-card-subtitle>Shown after a successful self-service action.</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="resolution-content" *ngIf="showResolutionScreen; else resolutionPlaceholder">
+              <div class="success-banner">
+                <mat-icon class="success-icon">check_circle</mat-icon>
+                <div class="success-text">
+                  <span>Ticket </span>
+                  <a href="#" class="ticket-link" (click)="onTicketClick($event)">PCTE334333</a>
+                  <span> - Your issue was resolved. Was this support helpful?</span>
+                  <div class="feedback-actions">
+                    <button mat-icon-button class="feedback-btn positive" (click)="onFeedback(true)">
+                      <mat-icon>thumb_up</mat-icon>
+                    </button>
+                    <button mat-icon-button class="feedback-btn negative" (click)="onFeedback(false)">
+                      <mat-icon>thumb_down</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #resolutionPlaceholder>
+              <div class="placeholder-content">
+                <mat-icon class="placeholder-icon">check_circle_outline</mat-icon>
+                <p>Resolution feedback will appear here after successful self-service actions.</p>
+                <button mat-stroked-button (click)="simulateResolution()">
+                  Simulate Resolution
+                </button>
+              </div>
+            </ng-template>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- External Service Card -->
+        <mat-card class="escalation-card">
+          <mat-card-header>
+            <mat-card-title>External Service</mat-card-title>
+            <mat-card-subtitle>If the bot cannot resolve, an auto-filled ticket is prepared.</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="escalation-content" *ngIf="showEscalationScreen; else escalationPlaceholder">
+              <div class="ticket-preview" *ngIf="currentTicket">
+                <h4 class="ticket-title">{{ currentTicket.title }}</h4>
+                <div class="ticket-details">
+                  <div class="ticket-detail">
+                    <mat-icon class="detail-icon">computer</mat-icon>
+                    <span class="detail-label">Device:</span>
+                    <span class="detail-value">{{ currentTicket.device }}</span>
+                  </div>
+                  <div class="ticket-detail">
+                    <mat-icon class="detail-icon">history</mat-icon>
+                    <span class="detail-label">Last action:</span>
+                    <span class="detail-value">{{ currentTicket.lastAction }}</span>
+                  </div>
+                  <div class="ticket-detail">
+                    <mat-icon class="detail-icon">priority_high</mat-icon>
+                    <span class="detail-label">Priority:</span>
+                    <span class="detail-value priority-{{ currentTicket.priority }}">{{ currentTicket.priority }}</span>
+                  </div>
+                </div>
+                <div class="ticket-actions">
+                  <button mat-raised-button color="primary" (click)="onSubmitTicket()">
+                    Submit to Help Desk
+                  </button>
+                  <button mat-stroked-button (click)="onEditTicket()">
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+            <ng-template #escalationPlaceholder>
+              <div class="placeholder-content">
+                <mat-icon class="placeholder-icon">assignment</mat-icon>
+                <p>Auto-filled tickets will appear here when escalation is needed.</p>
+                <button mat-stroked-button (click)="simulateEscalation()">
+                  Simulate Escalation
+                </button>
+              </div>
+            </ng-template>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Tier 1: Basic Service Content -->
+    <div *ngIf="selectedTier === 1" class="tier-content">
+      <!-- Quick Actions Section -->
+      <div class="content-section">
+        <h3 class="section-title">Quick Actions</h3>
+        <div class="quick-actions-grid">
+          <mat-card class="action-card" (click)="onQuickActionClick('password-reset')">
+            <mat-card-content>
+              <div class="action-icon">
+                <mat-icon>lock_reset</mat-icon>
+              </div>
+              <h4>Password Reset</h4>
+              <p>Reset your account password</p>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" (click)="onQuickActionClick('account-unlock')">
+            <mat-card-content>
+              <div class="action-icon">
+                <mat-icon>lock_open</mat-icon>
+              </div>
+              <h4>Account Unlock</h4>
+              <p>Unlock your locked account</p>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" (click)="onQuickActionClick('email-setup')">
+            <mat-card-content>
+              <div class="action-icon">
+                <mat-icon>email</mat-icon>
+              </div>
+              <h4>Email Setup</h4>
+              <p>Configure your email client</p>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" (click)="onQuickActionClick('software-request')">
+            <mat-card-content>
+              <div class="action-icon">
+                <mat-icon>download</mat-icon>
+              </div>
+              <h4>Software Request</h4>
+              <p>Request software installation</p>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" (click)="onQuickActionClick('access-request')">
+            <mat-card-content>
+              <div class="action-icon">
+                <mat-icon>folder_shared</mat-icon>
+              </div>
+              <h4>Access Request</h4>
+              <p>Request access to shared resources</p>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" (click)="onQuickActionClick('routine-onboarding')">
+            <mat-card-content>
+              <div class="action-icon">
+                <mat-icon>person_add</mat-icon>
+              </div>
+              <h4>Routine Onboarding</h4>
+              <p>Complete onboarding tasks</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Common Issues Resolver -->
+      <div class="content-section">
+        <h3 class="section-title">Common Issue Resolver</h3>
+        <mat-card class="resolver-card">
+          <mat-card-content>
+            <div class="resolver-content">
+              <h4>What's the issue?</h4>
+              <div class="issue-options">
+                <button 
+                  *ngFor="let issue of commonIssues" 
+                  mat-stroked-button 
+                  class="issue-button"
+                  (click)="onIssueSelect(issue)"
+                >
+                  <mat-icon>{{ issue.icon }}</mat-icon>
+                  {{ issue.title }}
+                </button>
+              </div>
+              
+              <div *ngIf="selectedIssue" class="issue-resolution">
+                <h5>{{ selectedIssue.title }}</h5>
+                <div class="resolution-steps">
+                  <div 
+                    *ngFor="let step of selectedIssue.steps; let i = index" 
+                    class="resolution-step"
+                  >
+                    <span class="step-number">{{ i + 1 }}</span>
+                    <span class="step-text">{{ step }}</span>
+                  </div>
+                </div>
+                <div class="resolution-actions">
+                  <button mat-raised-button color="primary" (click)="onIssueResolved()">
+                    Issue Resolved
+                  </button>
+                  <button mat-stroked-button (click)="onEscalateIssue()">
+                    Still Need Help
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Support Request Form -->
+      <div class="content-section">
+        <h3 class="section-title">Submit Support Request</h3>
+        <mat-card class="request-card">
+          <mat-card-content>
+            <div class="request-form">
+              <mat-form-field class="full-width" appearance="outline">
+                <mat-label>Issue Type</mat-label>
+                <mat-select [(ngModel)]="requestForm.issueType">
+                  <mat-option value="password">Password Issues</mat-option>
+                  <mat-option value="email">Email Problems</mat-option>
+                  <mat-option value="software">Software Installation</mat-option>
+                  <mat-option value="access">Access Request</mat-option>
+                  <mat-option value="other">Other</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field class="full-width" appearance="outline">
+                <mat-label>Description</mat-label>
+                <textarea 
+                  matInput 
+                  [(ngModel)]="requestForm.description"
+                  placeholder="Describe your issue..."
+                  rows="3"
+                ></textarea>
+              </mat-form-field>
+
+              <div class="form-actions">
+                <button mat-raised-button color="primary" (click)="onSubmitRequest()">
+                  Submit Request
+                </button>
+                <button mat-stroked-button (click)="onClearForm()">
+                  Clear Form
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Other Tiers Content -->
+    <div *ngIf="selectedTier !== 0 && selectedTier !== 1" class="tier-content">
+      <div class="tier-info">
+        <h2>{{ getTierName(selectedTier) }}</h2>
+        <p>{{ getTierDescription(selectedTier) }}</p>
+        <div class="tier-actions">
+          <button mat-raised-button color="primary" (click)="onTierAction(selectedTier)">
+            Get {{ getTierName(selectedTier) }} Support
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
